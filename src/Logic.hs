@@ -381,22 +381,14 @@ rebuild = go False
 prenexWith :: Ord v => Stream v' -> Formula r f v -> Formula r f v'
 prenexWith n = uncurry rebuild . go . rename n
   where
-    rebuild = foldr step id
-      where
-        step (F x) r = Forall x . r
-        step (E x) r = Exists x . r
-
     go = foldF
-        (\r ts                -> (Seq.empty,          Relation r ts))
-        (\x (p,  c)           -> (F x <| p,           c))
-        (\x (p,  c)           -> (E x <| p,           c))
-        (\  (p,  c)           -> (fmap swap p,        Not c))
-        (\  (p1, c1) (p2, c2) -> (p1           >< p2, And c1 c2))
-        (\  (p1, c1) (p2, c2) -> (p1           >< p2, Or  c1 c2))
-        (\  (p1, c1) (p2, c2) -> (fmap swap p1 >< p2, Implies c1 c2))
-      where
-        swap (F x) = E x
-        swap (E x) = F x
+        (\r ts                -> (Nil,                Relation r ts))
+        (\x (p,  c)           -> (add (F x) p,        c))
+        (\x (p,  c)           -> (add (E x) p,        c))
+        (\  (p,  c)           -> (swap p,             Not c))
+        (\  (p1, c1) (p2, c2) -> (merge p1        p2, And c1 c2))
+        (\  (p1, c1) (p2, c2) -> (merge p1        p2, Or  c1 c2))
+        (\  (p1, c1) (p2, c2) -> (merge (swap p1) p2, Implies c1 c2))
 
 -- | Variant of 'prenexWith' that uses default renaming.
 prenex :: Formula r f String -> Formula r f String
