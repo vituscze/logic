@@ -340,10 +340,13 @@ data Tree a
 -- | A tree storing a quantifier prefix.
 type PrefixTree a = Tree (Bool, [Type a])
 
+-- | Adds a new quantifier to a prefix tree.
 add :: Type a -> PrefixTree a -> PrefixTree a
 add q Nil                = Node (False, [q])         Nil Nil
 add q (Node (b, qs) l r) = Node (b, swapWhen b q:qs) l   r
 
+-- | Swaps one quantifier when the condition holds. When the condition doesn't
+--   hold, behaves as 'id'.
 swapWhen :: Bool -> Type a -> Type a
 swapWhen False = id
 swapWhen True  = s
@@ -351,13 +354,17 @@ swapWhen True  = s
     s (F x) = E x
     s (E x) = F x
 
+-- | Swaps all quantifiers in a prefix tree.
 swapAll :: PrefixTree a -> PrefixTree a
 swapAll Nil                = Nil
 swapAll (Node (b, qs) l r) = Node (not b, qs) l r
 
+-- | Merges two prefix trees into one.
 merge :: PrefixTree a -> PrefixTree a -> PrefixTree a
 merge = Node (False, [])
 
+-- | Given a prefix tree and a 'Formula', constructs a new formula
+--   with the quantifiers given by prefix tree in head position.
 rebuild :: PrefixTree v -> Formula r f v -> Formula r f v
 rebuild = go False
   where
