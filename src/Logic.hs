@@ -126,9 +126,7 @@ instance Traversable (Formula r f) where
 showFormulaWith :: [String] -> Formula String String String -> String
 showFormulaWith enc = go 0
   where
-    parensWhen p s
-      | p         = "(" ++ s' ++ ")"
-      | otherwise = s'
+    parensWhen p s = if p then "(" ++ s' ++ ")" else s'
       where
         s' = concat s
 
@@ -346,11 +344,10 @@ add :: Type a -> PrefixTree a -> PrefixTree a
 add q Nil             = Node False [q]               Nil Nil
 add q (Node b qs l r) = Node b     (swapWhen b q:qs) l   r
 
--- | Swaps one quantifier when the condition holds. When the condition doesn't
---   hold, behaves as 'id'.
+-- | Swaps one quantifier when the condition holds. When it doesn't, it behaves
+--   as an 'id'.
 swapWhen :: Bool -> Type a -> Type a
-swapWhen False = id
-swapWhen True  = s
+swapWhen p = if p then s else id
   where
     s (F x) = E x
     s (E x) = F x
@@ -414,7 +411,7 @@ splitPrenex (Forall x f) = (Forall x . g, core)
 splitPrenex (Exists x f) = (Exists x . g, core)
   where
     (g, core) = splitPrenex f
-splitPrenex f = (id, f)
+splitPrenex f            = (id, f)
 
 -- | Applies a function to all recursive 'Formula' occurences.
 fw :: (Formula r f v -> Formula r f v) -> Formula r f v -> Formula r f v
