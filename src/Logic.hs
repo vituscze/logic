@@ -331,10 +331,10 @@ data Type a
     | E a -- ^ Existential quantifier.
     deriving (Eq, Ord, Show)
 
--- | Type of trees.
+-- | Type of binary trees.
 data Tree a
-    = Nil
-    | Node a (Tree a) (Tree a)
+    = Nil                      -- ^ Empty tree.
+    | Node a (Tree a) (Tree a) -- ^ Tree node.
     deriving (Eq, Ord, Show)
 
 -- | A tree storing a quantifier prefix.
@@ -373,7 +373,7 @@ rebuild = go False
       where
         p' = p /= b
 
-    rebuildL p l = flip (foldr step) l
+    rebuildL p = flip (foldr step)
       where
         step = convert . swapWhen p
 
