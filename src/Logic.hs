@@ -333,6 +333,43 @@ data Type a
     | E a -- ^ Existential quantifier.
     deriving (Eq, Ord, Show)
 
+-- | Type of trees.
+data Tree a
+    = Nil
+    | Node a (Tree a) (Tree a)
+    deriving (Eq, Ord, Show)
+
+-- | A tree storing a quantifier prefix.
+type PrefixTree a = Tree (Bool, [Type a])
+
+add :: Type a -> PrefixTree a -> PrefixTree a
+add q Nil                = Node (False, [q]) Nil Nil
+add q (Node (b, qs) l r) = Node (b, q:qs)    l   r
+
+swap :: PrefixTree a -> PrefixTree a
+swap Nil                = Nil
+swap (Node (b, qs) l r) = Node (not b, qs) l r
+
+merge :: PrefixTree a -> PrefixTree a -> PrefixTree a
+merge = Node (False, [])
+
+rebuild :: PrefixTree v -> Formula r f v -> Formula r f v
+rebuild = go False
+  where
+    go _  Nil               = id
+    go p (Node (b, qs) l r) = rebuildL p' qs . go p' l . go p' r
+      where
+        p' = p /= b
+
+    rebuildL p l = flip (foldr step) l
+      where
+        step (F x)
+          | p         = Exists x
+          | otherwise = Forall x
+        step (E x)
+          | p         = Forall x
+          | otherwise = Exists x
+
 -- | Given a stream of unique names, converts a formula into its prenex normal
 --   form.
 --
