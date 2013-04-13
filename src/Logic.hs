@@ -35,9 +35,8 @@ module Logic
     )
 where
 
-import qualified Data.Map      as Map
-import qualified Data.Sequence as Seq
-import qualified Data.Set      as Set
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 import Control.Applicative
 import Control.Monad.Identity
@@ -49,7 +48,6 @@ import Data.Function
 import Data.List (intercalate)
 import Data.Map (Map)
 import Data.Maybe
-import Data.Sequence ((><), (<|))
 import Data.Set (Set, union, unions)
 import Data.Traversable
 import Prelude hiding (foldr, concat)
@@ -343,12 +341,19 @@ data Tree a
 type PrefixTree a = Tree (Bool, [Type a])
 
 add :: Type a -> PrefixTree a -> PrefixTree a
-add q Nil                = Node (False, [q]) Nil Nil
-add q (Node (b, qs) l r) = Node (b, q:qs)    l   r
+add q Nil                = Node (False, [q])         Nil Nil
+add q (Node (b, qs) l r) = Node (b, swapWhen b q:qs) l   r
 
-swap :: PrefixTree a -> PrefixTree a
-swap Nil                = Nil
-swap (Node (b, qs) l r) = Node (not b, qs) l r
+swapWhen :: Bool -> Type a -> Type a
+swapWhen False = id
+swapWhen True  = s
+  where
+    s (F x) = E x
+    s (E x) = F x
+
+swapAll :: PrefixTree a -> PrefixTree a
+swapAll Nil                = Nil
+swapAll (Node (b, qs) l r) = Node (not b, qs) l r
 
 merge :: PrefixTree a -> PrefixTree a -> PrefixTree a
 merge = Node (False, [])
@@ -363,12 +368,10 @@ rebuild = go False
 
     rebuildL p l = flip (foldr step) l
       where
-        step (F x)
-          | p         = Exists x
-          | otherwise = Forall x
-        step (E x)
-          | p         = Forall x
-          | otherwise = Exists x
+        step = convert . swapWhen p
+
+        convert (F x) = Forall x
+        convert (E x) = Exists x
 
 -- | Given a stream of unique names, converts a formula into its prenex normal
 --   form.
@@ -382,13 +385,13 @@ prenexWith :: Ord v => Stream v' -> Formula r f v -> Formula r f v'
 prenexWith n = uncurry rebuild . go . rename n
   where
     go = foldF
-        (\r ts                -> (Nil,                Relation r ts))
-        (\x (p,  c)           -> (add (F x) p,        c))
-        (\x (p,  c)           -> (add (E x) p,        c))
-        (\  (p,  c)           -> (swap p,             Not c))
-        (\  (p1, c1) (p2, c2) -> (merge p1        p2, And c1 c2))
-        (\  (p1, c1) (p2, c2) -> (merge p1        p2, Or  c1 c2))
-        (\  (p1, c1) (p2, c2) -> (merge (swap p1) p2, Implies c1 c2))
+        (\r ts                -> (Nil,                   Relation r ts))
+        (\x (p,  c)           -> (add (F x) p,           c))
+        (\x (p,  c)           -> (add (E x) p,           c))
+        (\  (p,  c)           -> (swapAll p,             Not c))
+        (\  (p1, c1) (p2, c2) -> (merge p1           p2, And c1 c2))
+        (\  (p1, c1) (p2, c2) -> (merge p1           p2, Or  c1 c2))
+        (\  (p1, c1) (p2, c2) -> (merge (swapAll p1) p2, Implies c1 c2))
 
 -- | Variant of 'prenexWith' that uses default renaming.
 prenex :: Formula r f String -> Formula r f String
