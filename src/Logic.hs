@@ -51,7 +51,7 @@ import Data.Map (Map)
 import Data.Maybe
 import Data.Set (Set, union, unions)
 import Data.Traversable
-import Prelude hiding (foldr, concat)
+import Prelude hiding (concat, foldr)
 
 infixr 5 :<
 
@@ -200,10 +200,10 @@ foldF rel fa ex neg con dis imp = go
     go (Relation r ts) = rel r ts
     go (Forall x f)    = fa x (go f)
     go (Exists x f)    = ex x (go f)
-    go (Not f)         = neg  (go f)
-    go (And f g)       = con  (go f) (go g)
-    go (Or  f g)       = dis  (go f) (go g)
-    go (Implies f g)   = imp  (go f) (go g)
+    go (Not      f)    = neg  (go f)
+    go (And      f g)  = con  (go f) (go g)
+    go (Or       f g)  = dis  (go f) (go g)
+    go (Implies  f g)  = imp  (go f) (go g)
 
 -- | Weak 'Formula' catamorphism.
 --
@@ -416,13 +416,13 @@ splitPrenex f            = (id, f)
 
 -- | Applies a function to all recursive 'Formula' occurences.
 fw :: (Formula r f v -> Formula r f v) -> Formula r f v -> Formula r f v
-fw r (Forall x f)  = Forall x (r f)
-fw r (Exists x f)  = Exists x (r f)
-fw r (Not f)       = Not      (r f)
-fw r (And f g)     = And      (r f) (r g)
-fw r (Or  f g)     = Or       (r f) (r g)
-fw r (Implies f g) = Implies  (r f) (r g)
-fw _ f             = f
+fw r (Forall x f)   = Forall x (r f)
+fw r (Exists x f)   = Exists x (r f)
+fw r (Not      f)   = Not      (r f)
+fw r (And      f g) = And      (r f) (r g)
+fw r (Or       f g) = Or       (r f) (r g)
+fw r (Implies  f g) = Implies  (r f) (r g)
+fw _ f              = f
 
 -- | Variant of 'iterate' that repeatedly applies the function @f@, until two
 --   consecutive results are equal.
