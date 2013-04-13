@@ -128,7 +128,8 @@ instance Traversable (Formula r f) where
 showFormulaWith :: [String] -> Formula String String String -> String
 showFormulaWith enc = go 0
   where
-    parensWhen p s = if p then "(" ++ s' ++ ")" else s'
+    -- If the condition is satisfied, surround the 'String' in parentheses.
+    pWhen p s = if p then "(" ++ s' ++ ")" else s'
       where
         s' = concat s
 
@@ -136,14 +137,14 @@ showFormulaWith enc = go 0
     [fa,  ex,  neg,  con,  dis,  imp] = enc
 
     -- Precendence levels.
-    [faP, exP, negP, conP, disP, impP] = [5, 5, 5, 4, 3, 2] :: [Int]
+    [faP, exP, negP, conP, disP, impP] = [7, 7, 7, 5, 3, 1] :: [Int]
 
-    go p (Forall x f)    = parensWhen (p > faP)  ["(", fa, x, ")", go faP f]
-    go p (Exists x f)    = parensWhen (p > exP)  ["(", ex, x, ")", go exP f]
-    go p (Not f)         = parensWhen (p > negP) [neg, go negP f]
-    go p (And f g)       = parensWhen (p > conP) [go conP f, con, go conP g]
-    go p (Or  f g)       = parensWhen (p > disP) [go disP f, dis, go disP g]
-    go p (Implies f g)   = parensWhen (p > impP) [go impP f, imp, go impP g]
+    go p (Forall x f)    = pWhen (p > faP)  ["(", fa, x, ")", go faP f]
+    go p (Exists x f)    = pWhen (p > exP)  ["(", ex, x, ")", go exP f]
+    go p (Not f)         = pWhen (p > negP) [neg, go negP f]
+    go p (And f g)       = pWhen (p > conP) [go conP f, con, go conP g]
+    go p (Or  f g)       = pWhen (p > disP) [go disP f, dis, go disP g]
+    go p (Implies f g)   = pWhen (p > impP) [go (impP + 1) f, imp, go impP g]
     go _ (Relation r ts) = concat
         [r, "[", intercalate "," (map showTerm ts), "]"]
 
