@@ -1,0 +1,35 @@
+name:                logic
+version:             0.2.0
+synopsis:            Simple logic formula library
+description:         A library for converting first-order logic formulas
+                     into prenex, conjunctive and Skolem normal forms.
+license:             GPL-2
+license-file:        LICENSE
+author:              Vít Šefl
+maintainer:          vituscze@gmail.com
+copyright:           Vít Šefl, 2013
+category:            Math
+build-type:          Simple
+cabal-version:       >=1.8
+tested-with:         GHC==7.4.2
+
+library
+  exposed-modules:     Logic
+  hs-source-dirs:      src
+  ghc-options:         -Wall
+  build-depends:       base >= 4.0 && < 5.0,
+                       containers >= 0.4,
+                       mtl >= 2.0
+
+test-suite tests
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      tests, src
+  main-is:             Main.hs
+  build-depends:       base >= 4.0 && < 5.0,
+                       containers >= 0.4,
+                       mtl >= 2.0,
+                       QuickCheck >= 2.4,
+                       test-framework >= 0.3.3,
+                       test-framework-quickcheck2 >= 0.2.9
+  ghc-options:         -Wall -fno-warn-orphans -threaded
+
