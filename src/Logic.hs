@@ -17,8 +17,6 @@ module Logic
     , fmapF
     , foldF
     , foldFw
-    , showFormula
-    , showFormulaUnicode
     , traverseF
       -- ** Conjunctive normal form
     , cnf
@@ -32,6 +30,9 @@ module Logic
       -- ** Variables
     , freeVars
     , rename
+      -- ** Pretty printing
+    , showFormula
+    , showFormulaUnicode
     )
 where
 
