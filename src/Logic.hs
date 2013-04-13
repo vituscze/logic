@@ -331,19 +331,20 @@ data Type a
     | E a -- ^ Existential quantifier.
     deriving (Eq, Ord, Show)
 
--- | Type of binary trees.
-data Tree a
-    = Nil                      -- ^ Empty tree.
-    | Node a (Tree a) (Tree a) -- ^ Tree node.
+-- | A (quantifier) prefix tree.
+--
+--   'Node' stores information whether the quantifiers should be swapped,
+--   list of quantifiers and two subtrees, which are used for binary
+--   logical operators.
+data PrefixTree a
+    = Nil                                              -- ^ Empty tree.
+    | Node Bool [Type a] (PrefixTree a) (PrefixTree a) -- ^ Tree node.
     deriving (Eq, Ord, Show)
-
--- | A tree storing a quantifier prefix.
-type PrefixTree a = Tree (Bool, [Type a])
 
 -- | Adds a new quantifier to a prefix tree.
 add :: Type a -> PrefixTree a -> PrefixTree a
-add q Nil                = Node (False, [q])         Nil Nil
-add q (Node (b, qs) l r) = Node (b, swapWhen b q:qs) l   r
+add q Nil             = Node False [q]               Nil Nil
+add q (Node b qs l r) = Node b     (swapWhen b q:qs) l   r
 
 -- | Swaps one quantifier when the condition holds. When the condition doesn't
 --   hold, behaves as 'id'.
@@ -356,12 +357,12 @@ swapWhen True  = s
 
 -- | Swaps all quantifiers in a prefix tree.
 swapAll :: PrefixTree a -> PrefixTree a
-swapAll Nil                = Nil
-swapAll (Node (b, qs) l r) = Node (not b, qs) l r
+swapAll Nil             = Nil
+swapAll (Node b qs l r) = Node (not b) qs l r
 
 -- | Merges two prefix trees into one.
 merge :: PrefixTree a -> PrefixTree a -> PrefixTree a
-merge = Node (False, [])
+merge = Node False []
 
 -- | Given a prefix tree and a 'Formula', constructs a new formula
 --   with the quantifiers given by prefix tree in head position.
@@ -369,7 +370,7 @@ rebuild :: PrefixTree v -> Formula r f v -> Formula r f v
 rebuild = go False
   where
     go _  Nil               = id
-    go p (Node (b, qs) l r) = rebuildL p' qs . go p' l . go p' r
+    go p (Node b qs l r) = rebuildL p' qs . go p' l . go p' r
       where
         p' = p /= b
 
