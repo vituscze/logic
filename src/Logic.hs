@@ -73,7 +73,8 @@ instance Traversable (Term f) where
 -- | Pretty prints a 'Term'.
 showTerm :: Term String String -> String
 showTerm (Var v)         = v
-showTerm (Function f ts) = f ++ "(" ++ intercalate "," (map showTerm ts) ++  ")"
+showTerm (Function f ts) = concat
+    [f, "(", intercalate "," (map showTerm ts), ")"]
 
 -- | 'Term' bimap.
 fmapT :: (f -> f') -> (v -> v') -> Term f v -> Term f' v'
@@ -225,14 +226,14 @@ foldFw var func rel binder unary binary =
 
 -- | Weak equality test which compares only formula structure.
 weakEq :: Formula r f v -> Formula r f v -> Bool
-weakEq (Relation _ _)  (Relation _ _)  = True
-weakEq (Forall _ f1)   (Forall _ f2)   = weakEq f1 f2
-weakEq (Exists _ f1)   (Exists _ f2)   = weakEq f1 f2
-weakEq (Not     f1)    (Not     f2)    = weakEq f1 f2
-weakEq (And     f1 g1) (And     f2 g2) = weakEq f1 f2 && weakEq g1 g2
-weakEq (Or      f1 g1) (Or      f2 g2) = weakEq f1 f2 && weakEq g1 g2
-weakEq (Implies f1 g1) (Implies f2 g2) = weakEq f1 f2 && weakEq g1 g2
-weakEq _               _               = False
+weakEq (Relation _ _)   (Relation _ _)   = True
+weakEq (Forall _ f1)    (Forall _ f2)    = weakEq f1 f2
+weakEq (Exists _ f1)    (Exists _ f2)    = weakEq f1 f2
+weakEq (Not      f1)    (Not      f2)    = weakEq f1 f2
+weakEq (And      f1 g1) (And      f2 g2) = weakEq f1 f2 && weakEq g1 g2
+weakEq (Or       f1 g1) (Or       f2 g2) = weakEq f1 f2 && weakEq g1 g2
+weakEq (Implies  f1 g1) (Implies  f2 g2) = weakEq f1 f2 && weakEq g1 g2
+weakEq _                _                = False
 
 -- | An infinite stream of @a@s.
 data Stream a
@@ -258,7 +259,7 @@ unfoldStopS :: (b -> (a, Either b (Stream a))) -> b -> Stream a
 unfoldStopS step = go
   where
     go s = x :< case e of
-        Left s'   -> go s'
+        Left  s'  -> go s'
         Right st  -> st
       where
         (x, e) = step s
