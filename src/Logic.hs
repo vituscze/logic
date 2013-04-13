@@ -331,9 +331,8 @@ data Type a
 
 -- | A (quantifier) prefix tree.
 --
---   'Node' stores information whether the quantifiers should be swapped,
---   list of quantifiers and two subtrees, which are used for binary
---   logical operators.
+--   Tree node stores whether the quantifiers should be swapped, list of
+--   quantifiers and two subtrees, which are used for binary logical operators.
 data PrefixTree a
     = Nil                                              -- ^ Empty tree.
     | Node Bool [Type a] (PrefixTree a) (PrefixTree a) -- ^ Tree node.
