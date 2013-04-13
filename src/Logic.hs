@@ -366,7 +366,7 @@ merge = Node False []
 rebuild :: PrefixTree v -> Formula r f v -> Formula r f v
 rebuild = go False
   where
-    go _  Nil               = id
+    go _  Nil            = id
     go p (Node b qs l r) = rebuildL p' qs . go p' l . go p' r
       where
         p' = p /= b
