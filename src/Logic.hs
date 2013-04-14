@@ -186,13 +186,6 @@ fw r (Or       f g) = Or       (r f) (r g)
 fw r (Implies  f g) = Implies  (r f) (r g)
 fw _ f              = f
 
--- | Converts a formula in CNF into a list of clauses.
---
---   Note that does not attempt to handle quantifiers.
-clauses :: Formula r f v -> [Formula r f v]
-clauses (And f g) = clauses f ++ clauses g
-clauses f         = [f]
-
 -- | Converts a formula into conjunctive normal form. Note that this function
 --   does not attempt to move or otherwise modify quantifiers. It should be
 --   used on a formula in prenex normal form obtained via 'prenex' or
@@ -202,23 +195,24 @@ clauses f         = [f]
 --   disjunction of literals. A literal is either a relation or
 --   negation of a relation.
 cnf :: Formula r f v -> Formula r f v
-cnf fl = p . foldr (.) id [cnf3, cnf2, cnf1] $ c
+cnf fl = p . foldr1 And . cnf3 . cnf2 . cnf1 $ c
   where
     (p, c) = splitPrenex fl
 
-    -- Remove implication, one step at a time.
+    -- Remove implication.
     cnf1 (Implies f g) = Or (Not (cnf1 f)) (cnf1 g)
     cnf1 f             = fw cnf1 f
 
-    -- Remove and distribute negation.
+    -- Distribute negation and remove double negation.
     cnf2 (Not (Not f))   = cnf2 f
     cnf2 (Not (And f g)) = Or  (cnf2 (Not f)) (cnf2 (Not g))
     cnf2 (Not (Or  f g)) = And (cnf2 (Not f)) (cnf2 (Not g))
     cnf2 f               = fw cnf2 f
 
     -- Get conjunction into topmost level.
-    cnf3 (Or f g) = foldr1 And $ Or <$> clauses (cnf3 f) <*> clauses (cnf3 g)
-    cnf3 f        = fw cnf3 f
+    cnf3 (And f g) =        cnf3 f ++  cnf3 g
+    cnf3 (Or  f g) = Or <$> cnf3 f <*> cnf3 g
+    cnf3 f         = [f]
 
 -- | Given a stream of new function names, transforms a prenex formula into
 --   its Skolem variant, removing any quantifiers. New function symbols are
