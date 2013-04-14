@@ -22,7 +22,7 @@ instance Applicative Stream where
     pure a = fix (a :<)
     (f :< fs) <*> (x :< xs) = f x :< (fs <*> xs)
 
--- | Stream anamorphism.
+-- | 'Stream' anamorphism.
 unfoldS :: (b -> (a, b)) -> b -> Stream a
 unfoldS step = go
   where
@@ -30,7 +30,7 @@ unfoldS step = go
       where
         (x, s') = step s
 
--- | Stream apomorphism.
+-- | 'Stream' apomorphism.
 unfoldStopS :: (b -> (a, Either b (Stream a))) -> b -> Stream a
 unfoldStopS step = go
   where

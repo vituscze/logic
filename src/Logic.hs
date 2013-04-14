@@ -87,7 +87,7 @@ rename vars formula = evalState (runReaderT action (Map.fromAscList m)) st
     -- 'fromJust' is prefectly safe here, since all variables are inside the
     -- map, by construction.
 
--- | Type of a binder together with its bound variable.
+-- | Type of a quantifier together with its bound variable.
 data Type a
     = F a -- ^ Universal quantifier.
     | E a -- ^ Existential quantifier.
@@ -245,7 +245,7 @@ skolemizeWith name formula = foldF
     -- Final mapping.
     m = execWriter (evalStateT action name)
       where
-        action = createMap . reverse . binderList $ formula
+        action = createMap . reverse . qList $ formula
 
     -- Create a mapping from existentially bound variables to functions.
     createMap []       = return []
@@ -257,9 +257,9 @@ skolemizeWith name formula = foldF
         return ts
 
     -- Extracts prenext part into a list.
-    binderList (Forall x f) = F x:binderList f
-    binderList (Exists x f) = E x:binderList f
-    binderList _            = []
+    qList (Forall x f) = F x:qList f
+    qList (Exists x f) = E x:qList f
+    qList _            = []
 
 -- | Variant of 'skolemizeWith' that uses default function names.
 skolemize :: Ord v => Formula r f v -> Formula r (Either String f) v
