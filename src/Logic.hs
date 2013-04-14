@@ -30,22 +30,11 @@ import Data.Foldable
 import Data.Map (Map)
 import Data.Maybe
 import Data.Traversable
-import Prelude hiding (foldr)
+import Prelude hiding (foldr, foldr1)
 
 import Data.Stream
 import Logic.Formula
 import Logic.Term
-
--- | Weak equality test which compares only formula structure.
-weakEq :: Formula r f v -> Formula r f v -> Bool
-weakEq (Relation _ _)   (Relation _ _)   = True
-weakEq (Forall _ f1)    (Forall _ f2)    = weakEq f1 f2
-weakEq (Exists _ f1)    (Exists _ f2)    = weakEq f1 f2
-weakEq (Not      f1)    (Not      f2)    = weakEq f1 f2
-weakEq (And      f1 g1) (And      f2 g2) = weakEq f1 f2 && weakEq g1 g2
-weakEq (Or       f1 g1) (Or       f2 g2) = weakEq f1 f2 && weakEq g1 g2
-weakEq (Implies  f1 g1) (Implies  f2 g2) = weakEq f1 f2 && weakEq g1 g2
-weakEq _                _                = False
 
 -- | A variant of 'zip' that zips a list with infinite stream, returning
 --   the zipped part and rest of the stream.
@@ -197,17 +186,12 @@ fw r (Or       f g) = Or       (r f) (r g)
 fw r (Implies  f g) = Implies  (r f) (r g)
 fw _ f              = f
 
--- | Variant of 'iterate' that repeatedly applies the function @f@, until two
---   consecutive results are equal.
-stabilizeBy :: (a -> a -> Bool) -> (a -> a) -> a -> [a]
-stabilizeBy eq f =
-    map snd . takeWhile (uncurry ((not .) . eq)) . (zip`ap`tail) . iterate f
-
--- | Returns the stabilized result.
-stabilizeByR :: (a -> a -> Bool) -> (a -> a) -> a -> a
-stabilizeByR eq f x = case stabilizeBy eq f x of
-    [] -> x
-    xs -> last xs
+-- | Converts a formula in CNF into a list of clauses.
+--
+--   Note that does not attempt to handle quantifiers.
+clauses :: Formula r f v -> [Formula r f v]
+clauses (And f g) = clauses f ++ clauses g
+clauses f         = [f]
 
 -- | Converts a formula into conjunctive normal form. Note that this function
 --   does not attempt to move or otherwise modify quantifiers. It should be
@@ -218,22 +202,23 @@ stabilizeByR eq f x = case stabilizeBy eq f x of
 --   disjunction of literals. A literal is either a relation or
 --   negation of a relation.
 cnf :: Formula r f v -> Formula r f v
-cnf = foldr ((.) . stabilizeByR weakEq) id [cnf3, cnf2, cnf1]
+cnf fl = p . foldr (.) id [cnf3, cnf2, cnf1] $ c
   where
+    (p, c) = splitPrenex fl
+
     -- Remove implication, one step at a time.
     cnf1 (Implies f g) = Or (Not (cnf1 f)) (cnf1 g)
     cnf1 f             = fw cnf1 f
 
     -- Remove and distribute negation.
     cnf2 (Not (Not f))   = cnf2 f
-    cnf2 (Not (And f g)) = Or  (Not (cnf2 f)) (Not (cnf2 g))
-    cnf2 (Not (Or  f g)) = And (Not (cnf2 f)) (Not (cnf2 g))
+    cnf2 (Not (And f g)) = Or  (cnf2 (Not f)) (cnf2 (Not g))
+    cnf2 (Not (Or  f g)) = And (cnf2 (Not f)) (cnf2 (Not g))
     cnf2 f               = fw cnf2 f
 
     -- Get conjunction into topmost level.
-    cnf3 (Or f (And g h)) = And (Or (cnf3 f) (cnf3 g)) (Or (cnf3 f) (cnf3 h))
-    cnf3 (Or (And f g) h) = And (Or (cnf3 f) (cnf3 h)) (Or (cnf3 g) (cnf3 h))
-    cnf3 f                = fw cnf3 f
+    cnf3 (Or f g) = foldr1 And $ Or <$> clauses (cnf3 f) <*> clauses (cnf3 g)
+    cnf3 f        = fw cnf3 f
 
 -- | Given a stream of new function names, transforms a prenex formula into
 --   its Skolem variant, removing any quantifiers. New function symbols are
