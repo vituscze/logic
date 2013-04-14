@@ -12,6 +12,7 @@ import Test.Framework (Test, defaultMain, testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 
+import Data.Stream
 import Logic hiding (prenex, skolemize)
 
 -- | Specialized variant of 'log' to prevent defaulting warnings.

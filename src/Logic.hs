@@ -1,38 +1,20 @@
 -- | The main module.
 module Logic
-   ( -- * Streams
-      Stream(..)
-    , names
-    , unfoldS
-    , unfoldStopS
-      -- * Terms
-    , Term(..)
-    , fmapT
-    , foldT
-    , freeVarsT
-    , showTerm
-    , traverseT
-      -- * Formulas
-    , Formula(..)
-    , fmapF
-    , foldF
-    , foldFw
-    , traverseF
-      -- ** Conjunctive normal form
+    ( -- * Data types
+      module Logic.Formula
+    , module Logic.Term
+      -- * Conjunctive normal form
     , cnf
-      -- ** Prenex normal form
+      -- * Prenex normal form
     , prenex
     , prenexWith
     , splitPrenex
-      -- ** Skolem normal form
+      -- * Skolem normal form
     , skolemize
     , skolemizeWith
-      -- ** Variables
-    , freeVars
+      -- * Variables
+    , names
     , rename
-      -- ** Pretty printing
-    , showFormula
-    , showFormulaUnicode
     )
 where
 
@@ -45,186 +27,14 @@ import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
 import Data.Foldable
-import Data.Function
-import Data.List (intercalate)
 import Data.Map (Map)
 import Data.Maybe
-import Data.Set (Set, union, unions)
 import Data.Traversable
-import Prelude hiding (concat, foldr)
+import Prelude hiding (foldr)
 
-infixr 5 :<
-
--- | A data type for terms. @f@ is the type of function labels and @v@ of
---   variable labels.
-data Term f v
-    = Var v                 -- ^ Variable.
-    | Function f [Term f v] -- ^ Function.
-    deriving (Eq, Ord, Show)
-
-instance Functor (Term f) where
-    fmap = fmapT id
-
-instance Foldable (Term f) where
-    fold = fst . traverse (flip (,) ())
-
-instance Traversable (Term f) where
-    traverse = traverseT pure
-
--- | Pretty prints a 'Term'.
-showTerm :: Term String String -> String
-showTerm (Var v)         = v
-showTerm (Function f ts) = concat
-    [f, "(", intercalate "," (map showTerm ts), ")"]
-
--- | 'Term' bimap.
-fmapT :: (f -> f') -> (v -> v') -> Term f v -> Term f' v'
-fmapT func var = runIdentity . traverseT (Identity . func) (Identity . var)
-
--- | 'Term' bitraversal.
-traverseT :: Applicative a
-          => (f -> a f') -> (v -> a v')
-          -> Term f v -> a (Term f' v')
-traverseT func var = foldT
-  (\v    -> Var      <$> var v)
-  (\f ts -> Function <$> func f <*> sequenceA ts)
-
--- | 'Term' catamorphism.
-foldT :: (v -> r)        -- ^ Variables.
-      -> (f -> [r] -> r) -- ^ Functions.
-      -> Term f v        -- ^ Term to reduce.
-      -> r
-foldT var func = go
-  where
-    go (Var x)         = var x
-    go (Function f ts) = func f (map go ts)
-
--- | A data type for logical formulas. @r@ is the type of relation labels,
---   @f@ of function labels and @v@ of variable labels.
-data Formula r f v
-    = Relation r [Term f v]                      -- ^ Relation of 'Term's.
-    | Forall   v (Formula r f v)                 -- ^ Universal quantifier.
-    | Exists   v (Formula r f v)                 -- ^ Existential quantifier.
-    | Not        (Formula r f v)                 -- ^ Negation.
-    | And        (Formula r f v) (Formula r f v) -- ^ Conjunction.
-    | Or         (Formula r f v) (Formula r f v) -- ^ Disjunction.
-    | Implies    (Formula r f v) (Formula r f v) -- ^ Implication.
-    deriving (Eq, Ord, Show)
-
-instance Functor (Formula r f) where
-    fmap = fmapF id id
-
-instance Foldable (Formula r f) where
-    fold = fst . traverse (flip (,) ())
-
-instance Traversable (Formula r f) where
-    traverse = traverseF pure pure
-
--- | Helper function for 'Formula' pretty printing.
---
---   The first argument specifies strings to use for 'Forall', 'Exists',
---   'Not', 'And', 'Or' and 'Implies', in this order. The list shall have
---   precisely 6 elements.
-showFormulaWith :: [String] -> Formula String String String -> String
-showFormulaWith enc = go 0
-  where
-    -- If the condition is satisfied, surround the 'String' in parentheses.
-    pWhen p s = if p then "(" ++ s' ++ ")" else s'
-      where
-        s' = concat s
-
-    -- 'String' representation of logical operators.
-    [fa,  ex,  neg,  con,  dis,  imp] = enc
-
-    -- Precendence levels.
-    [faP, exP, negP, conP, disP, impP] = [7, 7, 7, 5, 3, 1] :: [Int]
-
-    go p (Forall x f)    = pWhen (p > faP)  ["(", fa, x, ")", go faP f]
-    go p (Exists x f)    = pWhen (p > exP)  ["(", ex, x, ")", go exP f]
-    go p (Not f)         = pWhen (p > negP) [neg, go negP f]
-    go p (And f g)       = pWhen (p > conP) [go conP f, con, go conP g]
-    go p (Or  f g)       = pWhen (p > disP) [go disP f, dis, go disP g]
-    go p (Implies f g)   = pWhen (p > impP) [go (impP + 1) f, imp, go impP g]
-    go _ (Relation r ts) = concat
-        [r, "[", intercalate "," (map showTerm ts), "]"]
-
--- | Pretty prints a 'Formula', using ASCII look-alike characters for
---   logical operators.
---
---   Note that 'Relation' arguments are enclosed in square brackets for
---   easier recognition.
-showFormula :: Formula String String String -> String
-showFormula = showFormulaWith
-    ["V", "E", "~", " & ", " v ", " -> "]
-
--- | Pretty prints a 'Formula', using Unicode characters for logical
---   operators.
---
---   See 'showFormula'.
-showFormulaUnicode :: Formula String String String -> String
-showFormulaUnicode = showFormulaWith
-    ["\8704", "\8707", "\172", " & ", " \8744 ", " \8594 "]
-
--- | 'Formula' trimap.
-fmapF :: (r -> r') -> (f -> f') -> (v -> v')
-      -> Formula r f v -> Formula r' f' v'
-fmapF rel func var = runIdentity
-    . traverseF (Identity . rel) (Identity . func) (Identity . var)
-
--- | 'Formula' tritraversal.
-traverseF :: Applicative a
-          => (r -> a r') -> (f -> a f') -> (v -> a v')
-          -> Formula r f v -> a (Formula r' f' v')
-traverseF rel func var = foldF
-    (\r ts  -> Relation <$> rel r <*> traverse (traverseT func var) ts)
-    (\x f   -> Forall   <$> var x <*> f)
-    (\x f   -> Exists   <$> var x <*> f)
-    (\  f   -> Not      <$> f)
-    (\  f g -> And      <$> f <*> g)
-    (\  f g -> Or       <$> f <*> g)
-    (\  f g -> Implies  <$> f <*> g)
-
--- | 'Formula' catamorphism.
---
---   Note that unlike 'foldFw', this function does not recurse into 'Term's.
-foldF :: (r' -> [Term f v] -> r) -- ^ Relations.
-      -> (v -> r -> r)           -- ^ Universal quantificator.
-      -> (v -> r -> r)           -- ^ Existential quantificator.
-      -> (r -> r)                -- ^ Negation.
-      -> (r -> r -> r)           -- ^ Conjunction.
-      -> (r -> r -> r)           -- ^ Disjunction.
-      -> (r -> r -> r)           -- ^ Implication.
-      -> Formula r' f v          -- ^ Formula to reduce.
-      -> r
-foldF rel fa ex neg con dis imp = go
-  where
-    go (Relation r ts) = rel r ts
-    go (Forall x f)    = fa x (go f)
-    go (Exists x f)    = ex x (go f)
-    go (Not      f)    = neg  (go f)
-    go (And      f g)  = con  (go f) (go g)
-    go (Or       f g)  = dis  (go f) (go g)
-    go (Implies  f g)  = imp  (go f) (go g)
-
--- | Weak 'Formula' catamorphism.
---
---   Several 'Formula' constructors use only a single reduction function,
---   namely binders ('Forall' and 'Exists') and binary operators ('And',
---   'Or' and 'Implies').
---
---   This function does recurse into 'Term's.
-foldFw :: (v -> r)         -- ^ Variables.
-       -> (f -> [r] -> r)  -- ^ Functions.
-       -> (r' -> [r] -> r) -- ^ Relations.
-       -> (v -> r -> r)    -- ^ Binders.
-       -> (r -> r)         -- ^ Negation.
-       -> (r -> r -> r)    -- ^ Binary operators.
-       -> Formula r' f v   -- ^ Formula to reduce.
-       -> r
-foldFw var func rel binder unary binary =
-    foldF rel' binder binder unary binary binary binary
-  where
-    rel' r = rel r . map (foldT var func)
+import Data.Stream
+import Logic.Formula
+import Logic.Term
 
 -- | Weak equality test which compares only formula structure.
 weakEq :: Formula r f v -> Formula r f v -> Bool
@@ -236,35 +46,6 @@ weakEq (And      f1 g1) (And      f2 g2) = weakEq f1 f2 && weakEq g1 g2
 weakEq (Or       f1 g1) (Or       f2 g2) = weakEq f1 f2 && weakEq g1 g2
 weakEq (Implies  f1 g1) (Implies  f2 g2) = weakEq f1 f2 && weakEq g1 g2
 weakEq _                _                = False
-
--- | An infinite stream of @a@s.
-data Stream a
-    = a :< Stream a
-
-instance Functor Stream where
-    fmap f (x :< xs) = f x :< fmap f xs
-
-instance Applicative Stream where
-    pure a = fix (a :<)
-    (f :< fs) <*> (x :< xs) = f x :< (fs <*> xs)
-
--- | Stream anamorphism.
-unfoldS :: (b -> (a, b)) -> b -> Stream a
-unfoldS step = go
-  where
-    go s = x :< go s'
-      where
-        (x, s') = step s
-
--- | Stream apomorphism.
-unfoldStopS :: (b -> (a, Either b (Stream a))) -> b -> Stream a
-unfoldStopS step = go
-  where
-    go s = x :< case e of
-        Left  s'  -> go s'
-        Right st  -> st
-      where
-        (x, e) = step s
 
 -- | A variant of 'zip' that zips a list with infinite stream, returning
 --   the zipped part and rest of the stream.
@@ -281,15 +62,6 @@ names = toStream $ [1..] >>= flip replicateM ['a' .. 'z']
     -- The list of names is infinite, second case cannot happen.
     toStream (x:xs) = x :< toStream xs
     toStream _      = error "Impossible."
-
--- | All variables of a 'Term'.
-freeVarsT :: Ord v => Term f v -> Set v
-freeVarsT = foldT Set.singleton (const unions)
-
--- | All free variables of a 'Formula'.
-freeVars :: Ord v => Formula r f v -> Set v
-freeVars =
-    foldFw Set.singleton (const unions) (const unions) Set.delete id union
 
 -- | Internal monad transformer used for variable renaming. Maps variables of
 --   type @v@ to variables of type @v'@.
