@@ -1,5 +1,5 @@
 name:                logic
-version:             0.3.0
+version:             0.3.1
 synopsis:            Simple logic formula library
 description:         A library for converting first-order logic formulas
                      into prenex, conjunctive and Skolem normal forms.
