@@ -35,3 +35,6 @@ test-suite tests
                        test-framework-quickcheck2 >= 0.2
   ghc-options:         -Wall -fno-warn-orphans -threaded
 
+source-repository head
+  type:     git
+  location: https://github.com/vituscze/logic
