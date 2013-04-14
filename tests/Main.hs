@@ -290,9 +290,9 @@ tests =
         , testCase "CNF fl 1"       (showFormula (cnf formula9)  @=?
             "(Vx)(P[] v Q[])")
         , testCase "CNF fl 2"       (showFormula (cnf formula10) @=?
-            "(~A[] v ~F[]) & (~B[] v ~D[] v ~F[]) & (~C[] v ~D[] v ~F[]) \
-            \& (~B[] v E[] v ~F[]) & (~C[] v E[] v ~F[]) & (~A[] v ~G[]) \
-            \& (~B[] v ~D[] v ~G[]) & (~C[] v ~D[] v ~G[]) & (~B[] v E[] \
-            \v ~G[]) & (~C[] v E[] v ~G[])")
+            "(~A[] v ~F[]) & (~A[] v ~G[]) & (~B[] v ~D[] v ~F[]) & (~B[]\
+            \ v ~D[] v ~G[]) & (~B[] v E[] v ~F[]) & (~B[] v E[] v ~G[]) \
+            \& (~C[] v ~D[] v ~F[]) & (~C[] v ~D[] v ~G[]) & (~C[] v E[] \
+            \v ~F[]) & (~C[] v E[] v ~G[])")
         ]
     ]
