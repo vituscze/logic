@@ -108,7 +108,7 @@ showFormula f = showSFormula f ""
 showFormulaUnicode :: Formula String String String -> String
 showFormulaUnicode f = showSFormulaUnicode f ""
 
--- | Variant of 'showFormula' that returs a difference list.
+-- | Variant of 'showFormula' that returns a difference list.
 showSFormula :: Formula String String String -> ShowS
 showSFormula = showFormulaWith
     (map showString ["V", "E", "~", " & ", " v ", " -> "])

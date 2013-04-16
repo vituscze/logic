@@ -36,7 +36,7 @@ instance Foldable (Term f) where
 instance Traversable (Term f) where
     traverse = traverseT pure
 
--- | Pretty prints a 'Term', avoiding inefficient concatention.
+-- | Variant of 'showTerm' that returns a difference list.
 showSTerm :: Term String String -> ShowS
 showSTerm (Var v) = showString v
 showSTerm (Function f ts) = concatD
