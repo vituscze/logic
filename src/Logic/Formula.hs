@@ -11,6 +11,8 @@ module Logic.Formula
       -- * Pretty printing
     , showFormula
     , showFormulaUnicode
+    , showSFormula
+    , showSFormulaUnicode
     )
 where
 
@@ -19,10 +21,10 @@ import qualified Data.Set as Set
 import Control.Applicative
 import Control.Monad.Identity
 import Data.Foldable
-import Data.List (intercalate)
+import Data.List (intersperse)
 import Data.Set (Set, union, unions)
 import Data.Traversable
-import Prelude hiding (concat)
+import Prelude hiding (foldr)
 
 import Logic.Term
 
@@ -49,31 +51,47 @@ instance Traversable (Formula r f) where
 
 -- | Helper function for 'Formula' pretty printing.
 --
---   The first argument specifies strings to use for 'Forall', 'Exists',
---   'Not', 'And', 'Or' and 'Implies', in this order. The list shall have
---   precisely 6 elements.
-showFormulaWith :: [String] -> Formula String String String -> String
+--   The first argument specifies strings (in a difference list form) to use
+--   for 'Forall', 'Exists', 'Not', 'And', 'Or' and 'Implies', in this order.
+--   The list shall have precisely 6 elements.
+showFormulaWith :: [ShowS] -> Formula String String String -> ShowS
 showFormulaWith enc = go 0
   where
-    -- If the condition is satisfied, surround the 'String' in parentheses.
-    pWhen p s = if p then "(" ++ s' ++ ")" else s'
-      where
-        s' = concat s
+    str = showString
 
-    -- 'String' representation of logical operators.
-    [fa,  ex,  neg,  con,  dis,  imp] = enc
+    -- Difference list concatenation.
+    concatD = foldr (.) id
+
+    -- If the condition is satisfied, surround the 'ShowS' string
+    -- in parentheses.
+    pWhen p s = if p then str "(" . s' . str ")" else s'
+      where
+        s' = concatD s
+
+    -- 'ShowS' representation of logical operators.
+    [fa,  ex,  neg,  con,  dis,  imp]  = enc
 
     -- Precendence levels.
     [faP, exP, negP, conP, disP, impP] = [7, 7, 7, 5, 3, 1] :: [Int]
 
-    go p (Forall x f)    = pWhen (p > faP)  ["(", fa, x, ")", go faP f]
-    go p (Exists x f)    = pWhen (p > exP)  ["(", ex, x, ")", go exP f]
-    go p (Not f)         = pWhen (p > negP) [neg, go negP f]
-    go p (And f g)       = pWhen (p > conP) [go conP f, con, go conP g]
-    go p (Or  f g)       = pWhen (p > disP) [go disP f, dis, go disP g]
-    go p (Implies f g)   = pWhen (p > impP) [go (impP + 1) f, imp, go impP g]
-    go _ (Relation r ts) = concat
-        [r, "[", intercalate "," (map showTerm ts), "]"]
+    go p (Forall x f)    = pWhen (p > faP)
+        [str "(", fa, str x, str ")", go faP f]
+    go p (Exists x f)    = pWhen (p > exP)
+        [str "(", ex, str x, str ")", go exP f]
+    go p (Not f)         = pWhen (p > negP)
+        [neg, go negP f]
+    go p (And f g)       = pWhen (p > conP)
+        [go conP f, con, go conP g]
+    go p (Or  f g)       = pWhen (p > disP)
+        [go disP f, dis, go disP g]
+    go p (Implies f g)   = pWhen (p > impP)
+        [go (impP + 1) f, imp, go impP g]
+    go _ (Relation r ts) = concatD
+        [ str r
+        , str "["
+        , concatD . intersperse (str ",") . map showSTerm $ ts
+        , str "]"
+        ]
 
 -- | Pretty prints a 'Formula', using ASCII look-alike characters for
 --   logical operators.
@@ -81,16 +99,24 @@ showFormulaWith enc = go 0
 --   Note that 'Relation' arguments are enclosed in square brackets for
 --   easier recognition.
 showFormula :: Formula String String String -> String
-showFormula = showFormulaWith
-    ["V", "E", "~", " & ", " v ", " -> "]
+showFormula f = showSFormula f ""
 
 -- | Pretty prints a 'Formula', using Unicode characters for logical
 --   operators.
 --
 --   See 'showFormula'.
 showFormulaUnicode :: Formula String String String -> String
-showFormulaUnicode = showFormulaWith
-    ["\8704", "\8707", "\172", " & ", " \8744 ", " \8594 "]
+showFormulaUnicode f = showSFormulaUnicode f ""
+
+-- | Variant of 'showFormula' that returs a difference list.
+showSFormula :: Formula String String String -> ShowS
+showSFormula = showFormulaWith
+    (map showString ["V", "E", "~", " & ", " v ", " -> "])
+
+-- | Variant of 'showFormulaUnicode' that returns a difference list.
+showSFormulaUnicode :: Formula String String String -> ShowS
+showSFormulaUnicode = showFormulaWith
+    (map showString ["\8704", "\8707", "\172", " & ", " \8744 ", " \8594 "])
 
 -- | 'Formula' trimap.
 fmapF :: (r -> r') -> (f -> f') -> (v -> v')
@@ -141,7 +167,7 @@ foldF rel fa ex neg con dis imp = go
 --
 --   This function does recurse into 'Term's.
 foldFw :: (v -> r)         -- ^ Variables.
-       -> (f -> [r] -> r)  -- ^ Functions.
+       -> (f  -> [r] -> r) -- ^ Functions.
        -> (r' -> [r] -> r) -- ^ Relations.
        -> (v -> r -> r)    -- ^ Binders.
        -> (r -> r)         -- ^ Negation.
