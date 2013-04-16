@@ -5,6 +5,7 @@ module Logic.Term
     , foldT
     , freeVarsT
     , showTerm
+    , showSTerm
     , traverseT
     )
 where
@@ -14,10 +15,10 @@ import qualified Data.Set as Set
 import Control.Applicative
 import Control.Monad.Identity
 import Data.Foldable
-import Data.List (intercalate)
+import Data.List (intersperse)
 import Data.Set (Set, unions)
 import Data.Traversable
-import Prelude hiding (concat)
+import Prelude hiding (foldr)
 
 -- | A data type for terms. @f@ is the type of function labels and @v@ of
 --   variable labels.
@@ -35,11 +36,24 @@ instance Foldable (Term f) where
 instance Traversable (Term f) where
     traverse = traverseT pure
 
+-- | Pretty prints a 'Term', avoiding inefficient concatention.
+showSTerm :: Term String String -> ShowS
+showSTerm (Var v) = showString v
+showSTerm (Function f ts) = concatD
+    [ str f
+    , str "("
+    , concatD . intersperse (str ",") . map showSTerm $ ts
+    , str")"
+    ]
+  where
+    str     = showString
+
+    -- Difference list concatenation.
+    concatD = foldr (.) id
+
 -- | Pretty prints a 'Term'.
 showTerm :: Term String String -> String
-showTerm (Var v)         = v
-showTerm (Function f ts) = concat
-    [f, "(", intercalate "," (map showTerm ts), ")"]
+showTerm t = showSTerm t ""
 
 -- | 'Term' bimap.
 fmapT :: (f -> f') -> (v -> v') -> Term f v -> Term f' v'
