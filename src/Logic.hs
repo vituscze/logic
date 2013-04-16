@@ -134,7 +134,7 @@ rebuild p fl = go p fl False
 
     rebuildL qs f = choose <$> ask
       where
-        choose p = foldr (convert . swapWhen p) f qs
+        choose c = foldr (convert . swapWhen c) f qs
 
         convert (F x) = Forall x
         convert (E x) = Exists x
