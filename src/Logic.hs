@@ -127,16 +127,14 @@ merge = Node False []
 -- | Given a prefix tree and a 'Formula', constructs a new formula
 --   with the quantifiers given by prefix tree in head position.
 rebuild :: PrefixTree v -> Formula r f v -> Formula r f v
-rebuild = go False
+rebuild p fl = go p fl False
   where
-    go _  Nil            = id
-    go p (Node b qs l r) = rebuildL p' qs . go p' l . go p' r
-      where
-        p' = p /= b
+    go Nil             = return
+    go (Node b qs l r) = local (/= b) . (rebuildL qs <=< go l <=< go r)
 
-    rebuildL p = flip (foldr step)
+    rebuildL qs f = choose <$> ask
       where
-        step = convert . swapWhen p
+        choose p = foldr (convert . swapWhen p) f qs
 
         convert (F x) = Forall x
         convert (E x) = Exists x
