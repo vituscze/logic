@@ -19,7 +19,7 @@ import Logic.Term
 --   normal forms.
 data Formula :: FType -> * -> * -> * -> * where
     Relation :: r -> [Term f v]      -> Formula (T None True) r f v
-    Forall   :: ContainsQ q' => v -> Formula (T q p) r f v
+    Forall   :: (Merge q q' ~ q', ContainsQ q') => v -> Formula (T q p) r f v
              -> Formula (T q' p) r f v
     Exists   :: v -> Formula t r f v -> Formula (AddExists t) r f v
     Not      ::      Formula t r f v -> Formula (AddUnary  t) r f v
