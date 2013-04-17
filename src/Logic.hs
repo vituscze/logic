@@ -45,6 +45,8 @@ zip' (x:xs) (y :< ys) = ((x,y):z, z')
     (z, z') = zip' xs ys
 
 -- | An infinite stream of unique names.
+--
+-- > names == "a" :< "b" :< "c" :< ... :< "z" :< "aa" :< "ab" :< ...
 names :: Stream String
 names = toStream $ [1..] >>= flip replicateM ['a' .. 'z']
   where
@@ -66,6 +68,11 @@ localInsert s m = do
 
 -- | Given a stream of unique names, uniquely renames all variables inside
 --   a formula.
+--
+-- > showFormula (rename names (And
+-- >     (Forall "x" $ Relation "P" [Var "x"])
+-- >     (Forall "x" $ Relation "Q" [Var "x"])))
+-- > == "(Va)P[a] & (Vb)Q[b]"
 rename :: Ord v => Stream v' -> Formula r f v -> Formula r f v'
 rename vars formula = evalState (runReaderT action (Map.fromAscList m)) st
   where
@@ -160,11 +167,19 @@ prenexWith n = uncurry rebuild . go . rename n
         (\  (p1, c1) (p2, c2) -> (merge (swapAll p1) p2, Implies c1 c2))
 
 -- | Variant of 'prenexWith' that uses default renaming.
+--
+-- > (showFormula . prenex $ Not (Not (Not (Forall "x" (Relation "R" [])))))
+-- > == "(Ea)~~~R[]"
 prenex :: Formula r f String -> Formula r f String
 prenex = prenexWith names
 
 -- | Splits a formula in a prenex form into prenex and the core. Prenex part is
 --   represented as a function prepending the quantifiers to another formula.
+--
+-- > (p, f) = splitPrenex $ Forall "x" (Exists "y" (Relation "R" []))
+-- >
+-- > showFormula f == "R[]"
+-- > showFormula (p $ Relation "Q" [Var "x"]) == "(Vx)(Ey)Q[x]"
 splitPrenex :: Formula r f v -> (Formula r f v -> Formula r f v, Formula r f v)
 splitPrenex (Forall x f) = (Forall x . g, core)
   where
@@ -192,6 +207,11 @@ fw _ f              = f
 --   Formula is in a conjunctive normal form when it is a conjunction of
 --   disjunction of literals. A literal is either a relation or
 --   negation of a relation.
+--
+-- > (showFormula . cnf $ Or
+-- >     (And (Relation "X1" []) (Relation "X2" []))
+-- >     (And (Relation "Y1" []) (Relation "Y2" [])))
+-- > == "(X1[] v Y1[]) & (X1[] v Y2[]) & (X2[] v Y1[]) & (X2[] v Y2[])"
 cnf :: Formula r f v -> Formula r f v
 cnf fl = p . foldr1 And . cnf3 . cnf2 . cnf1 $ c
   where
@@ -254,5 +274,9 @@ skolemizeWith name formula = foldF
     qList _            = []
 
 -- | Variant of 'skolemizeWith' that uses default function names.
+--
+-- > (showFormula . fmapF id (either (++ "\'") id) id . skolemize $
+-- >     Forall "x" (Exists "y" (Relation "R" [Var "x", Var "y"])))
+-- > == "R[x,a'(x)]"
 skolemize :: Ord v => Formula r f v -> Formula r (Either String f) v
 skolemize = skolemizeWith names

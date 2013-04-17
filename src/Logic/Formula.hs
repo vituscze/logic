@@ -98,6 +98,9 @@ showFormulaWith enc = go 0
 --
 --   Note that 'Relation' arguments are enclosed in square brackets for
 --   easier recognition.
+--
+-- > showFormula (Forall "x" $ And (Relation "P" [Var "x"]) (Relation "Q" []))
+-- > == "(Vx)(P[x] & Q[])"
 showFormula :: Formula String String String -> String
 showFormula f = showSFormula f ""
 
@@ -119,12 +122,16 @@ showSFormulaUnicode = showFormulaWith
     (map showString ["\8704", "\8707", "\172", " & ", " \8744 ", " \8594 "])
 
 -- | 'Formula' trimap.
+--
+--   Also see 'fmapT'.
 fmapF :: (r -> r') -> (f -> f') -> (v -> v')
       -> Formula r f v -> Formula r' f' v'
 fmapF rel func var = runIdentity
     . traverseF (Identity . rel) (Identity . func) (Identity . var)
 
 -- | 'Formula' tritraversal.
+--
+--   Also see 'traverseT'.
 traverseF :: Applicative a
           => (r -> a r') -> (f -> a f') -> (v -> a v')
           -> Formula r f v -> a (Formula r' f' v')
@@ -180,6 +187,9 @@ foldFw var func rel binder unary binary =
     rel' r = rel r . map (foldT var func)
 
 -- | All free variables of a 'Formula'.
+--
+-- > freeVars (Forall "x" $ Relation "R" [Var "x", Var "y"])
+-- > == Set.fromList ["y"]
 freeVars :: Ord v => Formula r f v -> Set v
 freeVars =
     foldFw Set.singleton (const unions) (const unions) Set.delete id union
