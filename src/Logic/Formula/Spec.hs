@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
@@ -13,7 +14,7 @@ type instance (:&&:) True  True  = True
 type instance (:&&:) False b     = False
 type instance (:&&:) a     False = False
 
--- | Data type specifying what kind of quantifiers does a formula contain.
+-- | Data type specifying what kind of quantifiers may a formula contain.
 data QType
     = None
     | JustForall
@@ -52,7 +53,10 @@ type instance AddExists (T q p) = T Both p
 type family AddUnary (f :: FType) :: FType
 type instance AddUnary (T q p) = T q (p :&&: QFree q)
 
--- | What kind of formula does 'And', 'Or' and 'Implies' produce.
+-- | What kind of formula do 'And', 'Or' and 'Implies' produce.
 type family AddBinary (f1 :: FType) (f2 :: FType) :: FType
 type instance AddBinary (T q1 p1) (T q2 p2) =
     T (Merge q1 q2) (p1 :&&: p2 :&&: QFree (Merge q1 q2))
+
+-- | Formula contains some kind of quantifier.
+type ContainsQ q = QFree q ~ False
