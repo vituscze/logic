@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE GADTs          #-}
+-- | Alternative definition of a first order logic formula which remembers
+--   its kind in type.
 module Logic.Formula.GADT where
 
 import qualified Data.Set as Set
@@ -10,6 +12,10 @@ import Data.Set (Set, union, unions)
 import Logic.Formula.Spec
 import Logic.Term
 
+-- | A data type for logical formulas. @r@ is the type of relation labels,
+--   @f@ of function labels and @v@ of variable labels. @t@ are type level
+--   encoding of formula properties, namely being in a prenex and Skolem
+--   normal forms.
 data Formula :: FType -> * -> * -> * -> * where
     Relation :: r -> [Term f v]      -> Formula (T None True) r f v
     Forall   :: v -> Formula t r f v -> Formula (AddForall t) r f v
@@ -22,6 +28,7 @@ data Formula :: FType -> * -> * -> * -> * where
     Implies  :: Formula t1 r f v -> Formula t2 r f v
              -> Formula (AddBinary t1 t2) r f v
 
+-- | All free variables of a 'Formula'.
 freeVars :: Ord v => Formula t r f v -> Set v
 freeVars (Relation _ ts) = unions (map freeVarsT ts)
 freeVars (Forall x f)    = Set.delete x (freeVars f)
