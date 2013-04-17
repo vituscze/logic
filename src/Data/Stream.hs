@@ -23,6 +23,10 @@ instance Applicative Stream where
     (f :< fs) <*> (x :< xs) = f x :< (fs <*> xs)
 
 -- | 'Stream' anamorphism.
+--
+-- > nats = unfoldS (\n -> (n, n + 1)) 0
+-- >
+-- > nats == 0 :< 1 :< 2 :< 3 :< ...
 unfoldS :: (b -> (a, b)) -> b -> Stream a
 unfoldS step = go
   where
@@ -31,6 +35,8 @@ unfoldS step = go
         (x, s') = step s
 
 -- | 'Stream' apomorphism.
+--
+-- > unfoldStopS (\n -> (n, Right nats)) 10 == 10 :< 0 :< 1 :< 2 :< ...
 unfoldStopS :: (b -> (a, Either b (Stream a))) -> b -> Stream a
 unfoldStopS step = go
   where

@@ -52,14 +52,25 @@ showSTerm (Function f ts) = concatD
     concatD = foldr (.) id
 
 -- | Pretty prints a 'Term'.
+--
+-- > showTerm (Function "f" [Function "g" [Var "x"], Var "y"])
+-- > == "f(g(x),y)"
 showTerm :: Term String String -> String
 showTerm t = showSTerm t ""
 
 -- | 'Term' bimap.
+--
+-- > showTerm (fmapT (++ "!") (++ "?") (Function "f" [Var "x", Var "y"]))
+-- > == "f!(x?,y?)"
 fmapT :: (f -> f') -> (v -> v') -> Term f v -> Term f' v'
 fmapT func var = runIdentity . traverseT (Identity . func) (Identity . var)
 
 -- | 'Term' bitraversal.
+--
+-- >>> traverseT (\_ -> getLine) return $ Function () [Var "x", Function () []]
+-- f
+-- g
+-- Function "f" [Var "x",Function "g" []]
 traverseT :: Applicative a
           => (f -> a f') -> (v -> a v')
           -> Term f v -> a (Term f' v')
@@ -68,6 +79,9 @@ traverseT func var = foldT
   (\f ts -> Function <$> func f <*> sequenceA ts)
 
 -- | 'Term' catamorphism.
+--
+-- > foldT (\_ -> 0) (\_ ts -> 1 + sum ts) (Function "f" [Function "g" []])
+-- > == 2
 foldT :: (v -> r)        -- ^ Variables.
       -> (f -> [r] -> r) -- ^ Functions.
       -> Term f v        -- ^ Term to reduce.
@@ -78,5 +92,8 @@ foldT var func = go
     go (Function f ts) = func f (map go ts)
 
 -- | All variables of a 'Term'.
+--
+-- > freeVarsT (Function "f" [Var "x", Var "y", Var "x"])
+-- > == Set.fromList ["x", "y"]
 freeVarsT :: Ord v => Term f v -> Set v
 freeVarsT = foldT Set.singleton (const unions)
