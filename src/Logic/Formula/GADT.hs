@@ -1,7 +1,6 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds       #-}
-{-# LANGUAGE KindSignatures  #-}
-{-# LANGUAGE GADTs           #-}
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GADTs          #-}
 -- | Alternative definition of a first order logic formula which remembers
 --   its kind in type.
 module Logic.Formula.GADT where
@@ -19,8 +18,7 @@ import Logic.Term
 --   normal forms.
 data Formula :: FType -> * -> * -> * -> * where
     Relation :: r -> [Term f v]      -> Formula (T None True) r f v
-    Forall   :: (Merge q q' ~ q', ContainsQ q') => v -> Formula (T q p) r f v
-             -> Formula (T q' p) r f v
+    Forall   :: v -> Formula t r f v -> Formula (AddForall t) r f v
     Exists   :: v -> Formula t r f v -> Formula (AddExists t) r f v
     Not      ::      Formula t r f v -> Formula (AddUnary  t) r f v
     And      :: Formula t1 r f v -> Formula t2 r f v
