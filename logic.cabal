@@ -3,7 +3,7 @@ version:             0.3.2
 synopsis:            Simple logic formula library
 description:         A library for converting first-order logic formulas
                      into prenex, conjunctive and Skolem normal forms.
-license:             GPL-2
+license:             BSD3
 license-file:        LICENSE
 author:              Vít Šefl
 maintainer:          vituscze@gmail.com
