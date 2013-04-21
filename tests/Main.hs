@@ -1,7 +1,7 @@
 -- | Test suite.
 module Main (main) where
 
-import Test.HUnit hiding (Test)
+import Test.HUnit ((@=?))
 import Test.Framework (Test, defaultMain, testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
