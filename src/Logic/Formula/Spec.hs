@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE GADTs                #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -40,3 +41,10 @@ type family IsPrenex (p :: Bool) (q :: QType) :: Bool
 type instance IsPrenex p None       = p
 type instance IsPrenex p JustForall = False
 type instance IsPrenex p Both       = False
+
+-- | 'QType' ordering.
+data Leq :: QType -> QType -> * where
+    NoneFst  :: Leq None       q
+    AllAll   :: Leq JustForall JustForall
+    AllBoth  :: Leq JustForall Both
+    BothBoth :: Leq Both       Both
