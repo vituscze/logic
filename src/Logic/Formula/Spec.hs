@@ -21,12 +21,6 @@ data QType
     | Both
     deriving (Eq, Ord, Show)
 
--- | Type of a formula. At the moment, the 'Bool' field represents a prenex
---   flag.
-data FType
-    = T QType Bool
-    deriving (Eq, Ord, Show)
-
 -- | Merges two quantifier types into one.
 type family Merge (x :: QType) (y :: QType) :: QType
 type instance Merge None       y          = y
@@ -41,22 +35,8 @@ type instance QFree None       = True
 type instance QFree JustForall = False
 type instance QFree Both       = False
 
--- | What kind of formula does 'Forall' produce.
-type family AddForall (f :: FType) :: FType
-type instance AddForall (T q p) = T (Merge q JustForall) p
-
--- | What kind of formula does 'Exists' produce.
-type family AddExists (f :: FType) :: FType
-type instance AddExists (T q p) = T Both p
-
--- | What kind of formula does 'Not' produce.
-type family AddUnary (f :: FType) :: FType
-type instance AddUnary (T q p) = T q (p :&&: QFree q)
-
--- | What kind of formula do 'And', 'Or' and 'Implies' produce.
-type family AddBinary (f1 :: FType) (f2 :: FType) :: FType
-type instance AddBinary (T q1 p1) (T q2 p2) =
-    T (Merge q1 q2) (p1 :&&: p2 :&&: QFree (Merge q1 q2))
-
--- | Formula contains some kind of quantifier.
-type ContainsQ q = QFree q ~ False
+-- | Whether a formula still in a prenex normal form.
+type family IsPrenex (p :: Bool) (q :: QType) :: Bool
+type instance IsPrenex p None       = p
+type instance IsPrenex p JustForall = False
+type instance IsPrenex p Both       = False
