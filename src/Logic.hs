@@ -100,17 +100,17 @@ data Type a
     | E a -- ^ Existential quantifier.
     deriving (Eq, Ord, Show)
 
--- | A (quantifier) prefix tree.
+-- | A (quantifier) prenex tree.
 --
 --   Tree node stores whether the quantifiers should be swapped, list of
 --   quantifiers and two subtrees, which are used for binary logical operators.
-data PrefixTree a
+data PrenexTree a
     = Nil                                              -- ^ Empty tree.
-    | Node Bool [Type a] (PrefixTree a) (PrefixTree a) -- ^ Tree node.
+    | Node Bool [Type a] (PrenexTree a) (PrenexTree a) -- ^ Tree node.
     deriving (Eq, Ord, Show)
 
 -- | Adds a new quantifier to a prefix tree.
-add :: Type a -> PrefixTree a -> PrefixTree a
+add :: Type a -> PrenexTree a -> PrenexTree a
 add q Nil             = Node False [q]               Nil Nil
 add q (Node b qs l r) = Node b     (swapWhen b q:qs) l   r
 
@@ -123,17 +123,17 @@ swapWhen p = if p then s else id
     s (E x) = F x
 
 -- | Swaps all quantifiers in a prefix tree.
-swapAll :: PrefixTree a -> PrefixTree a
+swapAll :: PrenexTree a -> PrenexTree a
 swapAll Nil             = Nil
 swapAll (Node b qs l r) = Node (not b) qs l r
 
 -- | Merges two prefix trees into one.
-merge :: PrefixTree a -> PrefixTree a -> PrefixTree a
+merge :: PrenexTree a -> PrenexTree a -> PrenexTree a
 merge = Node False []
 
 -- | Given a prefix tree and a 'Formula', constructs a new formula
 --   with the quantifiers given by prefix tree in head position.
-rebuild :: PrefixTree v -> Formula r f v -> Formula r f v
+rebuild :: PrenexTree v -> Formula r f v -> Formula r f v
 rebuild p fl = go p fl False
   where
     go Nil             = return
