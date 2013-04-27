@@ -34,6 +34,7 @@ import Prelude hiding (foldr, foldr1)
 
 import Data.Stream
 import Logic.Formula
+import Logic.PrenexTree
 import Logic.Term
 
 -- | A variant of 'zip' that zips a list with infinite stream, returning
@@ -93,43 +94,6 @@ rename vars formula = evalState (runReaderT action (Map.fromAscList m)) st
     go = traverse (fmap fromJust . asks . Map.lookup)
     -- 'fromJust' is prefectly safe here, since all variables are inside the
     -- map, by construction.
-
--- | Type of a quantifier together with its bound variable.
-data Type a
-    = F a -- ^ Universal quantifier.
-    | E a -- ^ Existential quantifier.
-    deriving (Eq, Ord, Show)
-
--- | A (quantifier) prenex tree.
---
---   Tree node stores whether the quantifiers should be swapped, list of
---   quantifiers and two subtrees, which are used for binary logical operators.
-data PrenexTree a
-    = Nil                                              -- ^ Empty tree.
-    | Node Bool [Type a] (PrenexTree a) (PrenexTree a) -- ^ Tree node.
-    deriving (Eq, Ord, Show)
-
--- | Adds a new quantifier to a prefix tree.
-add :: Type a -> PrenexTree a -> PrenexTree a
-add q Nil             = Node False [q]               Nil Nil
-add q (Node b qs l r) = Node b     (swapWhen b q:qs) l   r
-
--- | Swaps one quantifier when the condition holds. When it doesn't, it behaves
---   as an 'id'.
-swapWhen :: Bool -> Type a -> Type a
-swapWhen p = if p then s else id
-  where
-    s (F x) = E x
-    s (E x) = F x
-
--- | Swaps all quantifiers in a prefix tree.
-swapAll :: PrenexTree a -> PrenexTree a
-swapAll Nil             = Nil
-swapAll (Node b qs l r) = Node (not b) qs l r
-
--- | Merges two prefix trees into one.
-merge :: PrenexTree a -> PrenexTree a -> PrenexTree a
-merge = Node False []
 
 -- | Given a prefix tree and a 'Formula', constructs a new formula
 --   with the quantifiers given by prefix tree in head position.
