@@ -22,6 +22,24 @@ data QType
     | Both
     deriving (Eq, Ord, Show)
 
+-- | Singleton for 'QType'.
+data QTypeSing :: QType -> * where
+    NoneS       :: QTypeSing None
+    JustForallS :: QTypeSing JustForall
+    BothS       :: QTypeSing Both
+
+class QTypeC (t :: QType) where
+    auto :: QTypeSing t
+
+instance QTypeC None where
+    auto = NoneS
+
+instance QTypeC JustForall where
+    auto = JustForallS
+
+instance QTypeC Both where
+    auto = BothS
+
 -- | Merges two quantifier types into one.
 type family Merge (x :: QType) (y :: QType) :: QType
 type instance Merge None       y          = y
@@ -29,6 +47,13 @@ type instance Merge JustForall None       = JustForall
 type instance Merge JustForall JustForall = JustForall
 type instance Merge JustForall Both       = Both
 type instance Merge Both       y          = Both
+
+mergeSing :: QTypeSing t1 -> QTypeSing t2 -> QTypeSing (Merge t1 t2)
+mergeSing NoneS       t           = t
+mergeSing JustForallS NoneS       = JustForallS
+mergeSing JustForallS JustForallS = JustForallS
+mergeSing JustForallS BothS       = BothS
+mergeSing BothS       t           = BothS
 
 -- | Whether 'QType' specifies a quantifier-free formula.
 type family QFree (q :: QType) :: Bool
@@ -48,3 +73,24 @@ data Leq :: QType -> QType -> * where
     AllAll   :: Leq JustForall JustForall
     AllBoth  :: Leq JustForall Both
     BothBoth :: Leq Both       Both
+
+-- Few lemmas.
+tRefl :: QTypeSing t -> Leq t t
+tRefl NoneS       = NoneFst
+tRefl JustForallS = AllAll
+tRefl BothS       = BothBoth
+
+mergeLeq :: QTypeSing t1 -> QTypeSing t2 -> Leq t1 t2
+         -> Leq t1 (Merge t2 JustForall)
+mergeLeq NoneS       _           _  = NoneFst
+mergeLeq JustForallS NoneS       _  = AllAll
+mergeLeq JustForallS JustForallS pf = pf
+mergeLeq JustForallS BothS       pf = pf
+mergeLeq BothS       NoneS       pf = undefined -- 'pf' is empty.
+mergeLeq BothS       JustForallS pf = pf
+mergeLeq BothS       BothS       pf = pf
+
+bothMax :: QTypeSing t -> Leq t Both
+bothMax NoneS       = NoneFst
+bothMax JustForallS = AllBoth
+bothMax BothS       = BothBoth
