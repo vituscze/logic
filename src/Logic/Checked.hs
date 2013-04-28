@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
-module Logic.GADT
+module Logic.Checked
     ( PrependResult(..)
     , prepend
     , remove
