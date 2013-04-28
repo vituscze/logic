@@ -43,7 +43,7 @@ showSTerm (Function f ts) = concatD
     [ str f
     , str "("
     , concatD . intersperse (str ",") . map showSTerm $ ts
-    , str")"
+    , str ")"
     ]
   where
     str     = showString
