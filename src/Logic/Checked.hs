@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
+-- | Compiler checked transformation into prenex normal form.
 module Logic.Checked
     ( PrependResult(..)
     , prepend
@@ -12,10 +13,17 @@ import Logic.Checked.Formula
 import Logic.Checked.Spec
 import Logic.PrenexTree
 
+-- | A type of formulas produced by 'prepend'.
+--
+--   Note that the actual type of quantifiers contained in the resulting formula
+--   is existentially hidden. Therefore, 'Some' contains a proof that 'prepend'
+--   didn't return a formula that contains less quantifiers than the original
+--   one.
 data PrependResult :: Bool -> QType -> * -> * -> * -> * where
     Some :: QTypeSing t -> Formula p t r f v -> Leq tOut t
          -> PrependResult p tOut r f v
 
+-- | Prepend a list of quantifiers in front of a given formula.
 prepend :: QTypeSing t -> [Type v] -> Formula p t r f v
         -> PrependResult p t r f v
 prepend t [] f = Some t f (tRefl t)
@@ -31,6 +39,7 @@ mapPair f g (x, y) = (f x, g y)
 zipPair :: (a -> c -> e) -> (b -> d -> f) -> (a, b) -> (c, d) -> (e, f)
 zipPair f g (x1, y1) (x2, y2) = (f x1 x2, g y1 y2)
 
+-- | Extracts all quantifiers from a formula into 'PrenexTree'.
 remove :: Formula p t r f v -> (Formula True None r f v, PrenexTree v)
 remove (Relation r ts) = (Relation r ts, Nil)
 remove (Forall x f)   = mapPair id (add (F x)) (remove f)
