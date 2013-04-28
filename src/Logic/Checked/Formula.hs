@@ -4,13 +4,13 @@
 {-# LANGUAGE TypeOperators  #-}
 -- | Alternative definition of a first order logic formula which remembers
 --   its kind in type.
-module Logic.Formula.GADT where
+module Logic.Checked.Formula where
 
 import qualified Data.Set as Set
 
 import Data.Set (Set, union, unions)
 
-import Logic.Formula.Spec
+import Logic.Checked.Spec
 import Logic.Term
 
 -- | A data type for logical formulas. @r@ is the type of relation labels,
@@ -31,6 +31,6 @@ freeVars (Relation _ ts) = unions (map freeVarsT ts)
 freeVars (Forall x f)    = Set.delete x (freeVars f)
 freeVars (Exists x f)    = Set.delete x (freeVars f)
 freeVars (Not      f)    = freeVars f
-freeVars (And      f g)  = freeVars f `Set.union` freeVars g
-freeVars (Or       f g)  = freeVars f `Set.union` freeVars g
-freeVars (Implies  f g)  = freeVars f `Set.union` freeVars g
+freeVars (And      f g)  = freeVars f `union` freeVars g
+freeVars (Or       f g)  = freeVars f `union` freeVars g
+freeVars (Implies  f g)  = freeVars f `union` freeVars g

@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 -- | Type level specification of a formula type.
-module Logic.Formula.Spec where
+module Logic.Checked.Spec where
 
 infixr 3 :&&:
 
@@ -53,7 +53,7 @@ mergeSing NoneS       t           = t
 mergeSing JustForallS NoneS       = JustForallS
 mergeSing JustForallS JustForallS = JustForallS
 mergeSing JustForallS BothS       = BothS
-mergeSing BothS       t           = BothS
+mergeSing BothS       _           = BothS
 
 -- | Whether 'QType' specifies a quantifier-free formula.
 type family QFree (q :: QType) :: Bool
@@ -86,7 +86,7 @@ mergeLeq NoneS       _           _  = NoneFst
 mergeLeq JustForallS NoneS       _  = AllAll
 mergeLeq JustForallS JustForallS pf = pf
 mergeLeq JustForallS BothS       pf = pf
-mergeLeq BothS       NoneS       pf = undefined -- 'pf' is empty.
+mergeLeq BothS       NoneS       _  = undefined -- 'pf' is empty.
 mergeLeq BothS       JustForallS pf = pf
 mergeLeq BothS       BothS       pf = pf
 

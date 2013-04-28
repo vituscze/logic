@@ -3,8 +3,8 @@
 {-# LANGUAGE KindSignatures #-}
 module Logic.GADT where
 
-import Logic.Formula.GADT
-import Logic.Formula.Spec
+import Logic.Checked.Formula
+import Logic.Checked.Spec
 import Logic.PrenexTree
 
 data PrependResult :: Bool -> QType -> * -> * -> * -> * where
