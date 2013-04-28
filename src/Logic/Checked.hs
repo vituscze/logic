@@ -1,7 +1,12 @@
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
-module Logic.GADT where
+module Logic.GADT
+    ( PrependResult(..)
+    , prepend
+    , remove
+    )
+    where
 
 import Logic.Checked.Formula
 import Logic.Checked.Spec
