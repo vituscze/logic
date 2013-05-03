@@ -14,8 +14,8 @@ import Logic (Formula)
 
 -- | Variable names.
 newtype Var
-  = V String
-  deriving (Eq, Ord, Show)
+    = V String
+    deriving (Eq, Ord, Show)
 
 -- | Unique variable names.
 names :: Stream Var

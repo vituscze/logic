@@ -75,8 +75,8 @@ traverseT :: Applicative a
           => (f -> a f') -> (v -> a v')
           -> Term f v -> a (Term f' v')
 traverseT func var = foldT
-  (\v    -> Var      <$> var v)
-  (\f ts -> Function <$> func f <*> sequenceA ts)
+    (\v    -> Var      <$> var v)
+    (\f ts -> Function <$> func f <*> sequenceA ts)
 
 -- | 'Term' catamorphism.
 --
