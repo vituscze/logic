@@ -7,7 +7,7 @@ module Logic.PrenexTree
     , swapAll
     , merge
     )
-    where
+where
 
 -- | Type of a quantifier together with its bound variable.
 data Type a
