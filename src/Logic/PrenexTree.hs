@@ -3,9 +3,10 @@ module Logic.PrenexTree
     ( Type(..)
     , PrenexTree(..)
     , add
+    , flatten
+    , merge
     , swapWhen
     , swapAll
-    , merge
     )
 where
 
@@ -45,3 +46,15 @@ swapAll (Node b qs l r) = Node (not b) qs l r
 -- | Merges two prefix trees into one.
 merge :: PrenexTree a -> PrenexTree a -> PrenexTree a
 merge = Node False []
+
+-- | Flattens a 'PrenexTree' into a list in preorder fashion. Swaps all
+--   quantifiers according to the 'Bool' flags.
+flatten :: PrenexTree a -> [Type a]
+flatten p = go False p []
+  where
+    go q Nil             = id
+    go q (Node b qs l r) = goL b' qs . go b' l . go b' r
+      where
+        b' = b /= q
+
+        goL b = flip (foldr ((:) . swapWhen b))
