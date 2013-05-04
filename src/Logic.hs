@@ -98,17 +98,10 @@ rename vars formula = evalState (runReaderT action (Map.fromAscList m)) st
 -- | Given a prefix tree and a 'Formula', constructs a new formula
 --   with the quantifiers given by prefix tree in head position.
 rebuild :: PrenexTree v -> Formula r f v -> Formula r f v
-rebuild p fl = go p fl False
+rebuild p f = foldr convert f (flatten p)
   where
-    go Nil             = return
-    go (Node b qs l r) = local (/= b) . (rebuildL qs <=< go l <=< go r)
-
-    rebuildL qs f = choose <$> ask
-      where
-        choose c = foldr (convert . swapWhen c) f qs
-
-        convert (F x) = Forall x
-        convert (E x) = Exists x
+    convert (F x) = Forall x
+    convert (E x) = Exists x
 
 -- | Given a stream of unique names, converts a formula into its prenex normal
 --   form.
