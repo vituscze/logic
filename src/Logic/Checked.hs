@@ -75,7 +75,7 @@ updateVar v = maybe (Left v) Right . Map.lookup v <$> ask
 -- | Rename all bound variables to a unique name.
 rename :: Ord v => Stream v' -> Formula p t r f v
        -> Formula p t r f (Either v v')
-rename vs f = evalState (runReaderT (go f) Map.empty) vs
+rename vs f' = evalState (runReaderT (go f') Map.empty) vs
   where
     go :: Ord v => Formula p t r f v
        -> RenameM v v' (Formula p t r f (Either v v'))
