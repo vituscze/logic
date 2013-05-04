@@ -15,6 +15,8 @@ type instance (:&&:) True  True  = True
 type instance (:&&:) False b     = False
 type instance (:&&:) a     False = False
 
+-- * Quantifiers
+
 -- | Data type specifying what kind of quantifiers may a formula contain.
 data QType
     = None
@@ -63,7 +65,7 @@ type instance QFree None       = True
 type instance QFree JustForall = False
 type instance QFree Both       = False
 
--- | Whether a formula still in a prenex normal form.
+-- | Whether a formula is still in a prenex normal form.
 type family IsPrenex (p :: Bool) (q :: QType) :: Bool
 type instance IsPrenex p None       = p
 type instance IsPrenex p JustForall = False
@@ -76,7 +78,7 @@ data Leq :: QType -> QType -> * where
     AllBoth  :: Leq JustForall Both
     BothBoth :: Leq Both       Both
 
--- Few lemmas.
+-- * Lemmas
 
 -- | 'Leq' is reflexive.
 tRefl :: QTypeSing t -> Leq t t
