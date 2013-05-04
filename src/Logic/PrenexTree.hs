@@ -1,12 +1,12 @@
 -- | A binary tree for storing quantifiers.
 module Logic.PrenexTree
-    ( Type(..)
-    , PrenexTree(..)
+    ( PrenexTree(..)
+    , Type(..)
     , add
     , flatten
     , merge
-    , swapWhen
     , swapAll
+    , swapWhen
     )
 where
 
