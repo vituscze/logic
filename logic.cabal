@@ -15,6 +15,9 @@ tested-with:         GHC==7.4.2
 
 library
   exposed-modules:     Logic,
+                       Logic.Checked,
+                       Logic.Checked.Formula,
+                       Logic.Checked.Spec,
                        Logic.Formula,
                        Logic.Term,
                        Data.Stream
