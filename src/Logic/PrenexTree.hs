@@ -52,9 +52,9 @@ merge = Node False []
 flatten :: PrenexTree a -> [Type a]
 flatten p = go False p []
   where
-    go q Nil             = id
+    go _ Nil             = id
     go q (Node b qs l r) = goL b' qs . go b' l . go b' r
       where
         b' = b /= q
 
-        goL b = flip (foldr ((:) . swapWhen b))
+        goL s = flip (foldr ((:) . swapWhen s))
