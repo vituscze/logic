@@ -98,7 +98,7 @@ rename vars formula = evalState (runReaderT action (Map.fromAscList m)) st
 -- | Given a prefix tree and a 'Formula', constructs a new formula
 --   with the quantifiers given by prefix tree in head position.
 rebuild :: PrenexTree v -> Formula r f v -> Formula r f v
-rebuild p f = foldr convert f (flatten p)
+rebuild = flip (foldr convert) . flatten
   where
     convert (F x) = Forall x
     convert (E x) = Exists x
